@@ -1,7 +1,8 @@
 import 'dart:convert';
-import 'dart:html' as html;
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'invoice_details_screen.dart';
+import 'customer_list_screen.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 
 class NewInvoiceScreen extends StatefulWidget {
@@ -24,10 +25,14 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> {
   @override
   void initState() {
     super.initState();
-    final stored = html.window.localStorage['customers'];
-    if (stored != null) {
-      customers = stored.split(',');
-    }
+    _loadCustomers();
+  }
+
+  Future<void> _loadCustomers() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      customers = prefs.getStringList('customers') ?? [];
+    });
   }
 
   void _showAddCustomerDialog() {
@@ -51,11 +56,12 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> {
           ),
           TextButton(
             child: const Text('إضافة'),
-            onPressed: () {
+            onPressed: () async {
               final name = controller.text.trim();
               if (name.isNotEmpty && !customers.contains(name)) {
+                final prefs = await SharedPreferences.getInstance();
                 customers.add(name);
-                html.window.localStorage['customers'] = customers.join(',');
+                await prefs.setStringList('customers', customers);
                 setState(() {
                   selectedCustomer = name;
                 });
@@ -68,7 +74,7 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> {
     );
   }
 
-  void _saveInvoice() {
+  Future<void> _saveInvoice() async {
     if (!_formKey.currentState!.validate()) return;
 
     final invoice = {
@@ -78,13 +84,10 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> {
       'items': items
     };
 
-    final stored = html.window.localStorage['invoices'];
-    List<String> invoices = [];
-    if (stored != null) {
-      invoices = List<String>.from(jsonDecode(stored));
-    }
+    final prefs = await SharedPreferences.getInstance();
+    List<String> invoices = prefs.getStringList('invoices') ?? [];
     invoices.add(jsonEncode(invoice));
-    html.window.localStorage['invoices'] = jsonEncode(invoices);
+    await prefs.setStringList('invoices', invoices);
 
     showDialog(
       context: context,
@@ -95,11 +98,12 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> {
           TextButton(
             child: const Text('عرض الفاتورة'),
             onPressed: () {
-              Navigator.pop(context); // close dialog
+              Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => InvoiceDetailsScreen(jsonInvoice: jsonEncode(invoice)),
+                  builder: (_) =>
+                      InvoiceDetailsScreen(jsonInvoice: jsonEncode(invoice)),
                 ),
               );
             },
@@ -125,28 +129,43 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: DropdownButtonFormField2<String>(
-                      isExpanded: true,
-                      decoration: const InputDecoration(
-                        labelText: 'اختر العميل',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: customers
-                          .map((name) =>
-                              DropdownMenuItem(value: name, child: Text(name)))
-                          .toList(),
-                      value: selectedCustomer,
-                      onChanged: (value) =>
-                          setState(() => selectedCustomer = value),
-                      validator: (value) =>
-                          value == null ? 'اختر العميل' : null,
-                    ),
+                    child: customers.isEmpty
+                        ? ElevatedButton.icon(
+                            icon: const Icon(Icons.person_add_alt_1),
+                            label: const Text("إضافة عميل"),
+                            onPressed: _showAddCustomerDialog,
+                          )
+                        : DropdownButtonFormField2<String>(
+                            isExpanded: true,
+                            decoration: const InputDecoration(
+                              labelText: 'اختر العميل',
+                              border: OutlineInputBorder(),
+                            ),
+                            items: customers
+                                .map((name) => DropdownMenuItem(
+                                    value: name, child: Text(name)))
+                                .toList(),
+                            value: selectedCustomer,
+                            onChanged: (value) =>
+                                setState(() => selectedCustomer = value),
+                            validator: (value) =>
+                                value == null ? 'اختر العميل' : null,
+                          ),
                   ),
                   const SizedBox(width: 8),
                   IconButton(
-                    icon: const Icon(Icons.person_add_alt_1),
-                    tooltip: 'إضافة عميل جديد',
-                    onPressed: _showAddCustomerDialog,
+                    icon: const Icon(Icons.manage_accounts),
+                    tooltip: 'إدارة العملاء',
+                    onPressed: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const CustomerListScreen()),
+                      );
+                      if (result == true) {
+                        _loadCustomers();
+                      }
+                    },
                   ),
                 ],
               ),
@@ -168,7 +187,8 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> {
                                 border: OutlineInputBorder(),
                               ),
                               initialValue: items[index]['name'],
-                              onChanged: (value) => items[index]['name'] = value,
+                              onChanged: (value) =>
+                                  items[index]['name'] = value,
                               validator: (value) =>
                                   (value == null || value.isEmpty)
                                       ? 'أدخل اسم المنتج'
@@ -185,7 +205,8 @@ class _NewInvoiceScreenState extends State<NewInvoiceScreen> {
                               ),
                               keyboardType: TextInputType.number,
                               initialValue: items[index]['qty'],
-                              onChanged: (value) => items[index]['qty'] = value,
+                              onChanged: (value) =>
+                                  items[index]['qty'] = value,
                               validator: (value) =>
                                   (value == null || value.isEmpty)
                                       ? 'أدخل الكمية'

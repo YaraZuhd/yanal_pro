@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'dart:html' as html;
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'invoice_details_screen.dart';
 
 class InvoiceListScreen extends StatefulWidget {
@@ -28,15 +28,9 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     super.dispose();
   }
 
-  void _loadInvoices() {
-    final stored = html.window.localStorage['invoices'];
-    if (stored != null) {
-      try {
-        rawInvoices = List<String>.from(jsonDecode(stored));
-      } catch (_) {
-        rawInvoices = [];
-      }
-    }
+  Future<void> _loadInvoices() async {
+    final prefs = await SharedPreferences.getInstance();
+    rawInvoices = prefs.getStringList('invoices') ?? [];
     filteredInvoices = List.from(rawInvoices);
     setState(() {});
   }
@@ -51,12 +45,25 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     setState(() {});
   }
 
-  void _deleteInvoice(int index) {
+  Future<void> _deleteInvoice(int index) async {
     final rawToDelete = filteredInvoices[index];
     rawInvoices.remove(rawToDelete);
     filteredInvoices.removeAt(index);
-    html.window.localStorage['invoices'] = jsonEncode(rawInvoices);
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('invoices', rawInvoices);
+
     setState(() {});
+  }
+
+  Future<void> _deleteAllInvoices() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('invoices');
+
+    setState(() {
+      rawInvoices.clear();
+      filteredInvoices.clear();
+    });
   }
 
   @override
@@ -81,13 +88,9 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                       ),
                       TextButton(
                         child: const Text('حذف الكل'),
-                        onPressed: () {
-                          html.window.localStorage.remove('invoices');
+                        onPressed: () async {
                           Navigator.pop(context);
-                          setState(() {
-                            rawInvoices.clear();
-                            filteredInvoices.clear();
-                          });
+                          await _deleteAllInvoices();
                         },
                       ),
                     ],
@@ -121,8 +124,12 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                             final raw = filteredInvoices[index];
                             final invoice = jsonDecode(raw);
                             final isNew = invoice.containsKey('items');
-                            final name = invoice['customer'] ?? invoice['name'] ?? 'غير معروف';
-                            final date = (invoice['timestamp'] ?? '').toString().split('T').first;
+                            final name =
+                                invoice['customer'] ?? invoice['name'] ?? 'غير معروف';
+                            final date = (invoice['timestamp'] ?? '')
+                                .toString()
+                                .split('T')
+                                .first;
 
                             double total = 0;
                             if (isNew) {
@@ -141,7 +148,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
 
                             return ListTile(
                               title: Text(name),
-                              subtitle: Text('₪ ${total.toStringAsFixed(2)} - $date'),
+                              subtitle: Text('شيكل ${total.toStringAsFixed(2)} - $date'),
                               trailing: IconButton(
                                 icon: const Icon(Icons.delete, color: Colors.red),
                                 onPressed: () => _deleteInvoice(index),
@@ -150,7 +157,8 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) => InvoiceDetailsScreen(jsonInvoice: raw),
+                                    builder: (_) =>
+                                        InvoiceDetailsScreen(jsonInvoice: raw),
                                   ),
                                 );
                               },

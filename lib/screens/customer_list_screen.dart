@@ -1,5 +1,3 @@
-import 'dart:html' as html;
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -21,26 +19,18 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
   }
 
   Future<void> _loadCustomers() async {
-    if (kIsWeb) {
-      final stored = html.window.localStorage['customers'];
-      if (stored != null) {
-        setState(() => customers = List<String>.from(stored.split(',').where((e) => e.trim().isNotEmpty)));
-      }
-    } else {
-      final prefs = await SharedPreferences.getInstance();
-      setState(() => customers = prefs.getStringList('customers') ?? []);
-    }
+    final prefs = await SharedPreferences.getInstance();
+    setState(() => customers = prefs.getStringList('customers') ?? []);
   }
 
-  Future<void> _addCustomer(String name) async {
-    if (name.trim().isEmpty) return;
-    if (customers.contains(name)) return;
+ Future<void> _addCustomer(String name) async {
+  final trimmed = name.trim();
+  if (trimmed.isEmpty || customers.contains(trimmed)) return;
 
-    customers.add(name.trim());
-    await _saveCustomers();
-    _controller.clear();
-    setState(() {});
-  }
+  setState(() => customers.add(trimmed)); // نضيف داخل نفس الصفحة
+  await _saveCustomers();
+  _controller.clear();
+}
 
   Future<void> _deleteCustomer(int index) async {
     customers.removeAt(index);
@@ -49,12 +39,8 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
   }
 
   Future<void> _saveCustomers() async {
-    if (kIsWeb) {
-      html.window.localStorage['customers'] = customers.join(',');
-    } else {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList('customers', customers);
-    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('customers', customers);
   }
 
   @override

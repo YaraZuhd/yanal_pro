@@ -102,7 +102,7 @@ class InvoiceDetailsScreen extends StatelessWidget {
                       fontWeight: pw.FontWeight.bold,
                     )),
                 pw.Text('فرخة - سلفيت', style: pw.TextStyle(font: ttf)),
-                pw.Text('الهاتف: +972568499052',
+                pw.Text('الهاتف: 0568499052',
                     style: pw.TextStyle(font: ttf)),
                 pw.Divider(thickness: 2),
                 pw.SizedBox(height: 16),
