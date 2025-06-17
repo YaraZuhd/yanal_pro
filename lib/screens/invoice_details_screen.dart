@@ -4,6 +4,8 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'thermal_printer_service.dart';
+import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 
 class InvoiceDetailsScreen extends StatelessWidget {
   final String jsonInvoice;
@@ -29,10 +31,31 @@ class InvoiceDetailsScreen extends StatelessWidget {
         title: const Text('تفاصيل الفاتورة'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.print),
+            tooltip: 'طباعة حرارية',
+            onPressed: () async {
+              final printer = BlueThermalPrinter.instance;
+              final devices = await printer.getBondedDevices();
+              if (devices.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('لا يوجد طابعات متصلة')),
+                );
+                return;
+              }
+              final selectedDevice = devices.first;
+              try {
+                await ThermalPrinterService.printInvoice(invoice, selectedDevice);
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('فشل في الطباعة: $e')),
+                );
+              }
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.download),
             tooltip: 'تحميل كـ PDF',
-            onPressed: () =>
-                _downloadPdf(context, customer, date, note, items, total),
+            onPressed: () => _downloadPdf(context, customer, date, note, items, total),
           ),
         ],
       ),
@@ -52,19 +75,16 @@ class InvoiceDetailsScreen extends StatelessWidget {
             ...items.map((item) {
               final qty = item['qty'];
               final price = item['price'];
-              final total = (double.tryParse(qty) ?? 0) *
-                  (double.tryParse(price) ?? 0);
+              final total = (double.tryParse(qty) ?? 0) * (double.tryParse(price) ?? 0);
               return ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(item['name'] ?? ''),
-                subtitle: Text(
-                    'الكمية: $qty × السعر: ₪$price = ₪${total.toStringAsFixed(2)}'),
+                subtitle: Text('الكمية: $qty × السعر: ₪$price = ₪${total.toStringAsFixed(2)}'),
               );
             }),
             const Divider(height: 32),
             Text('المجموع الكلي: ₪${total.toStringAsFixed(2)}',
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold, fontSize: 18)),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           ],
         ),
       ),
@@ -79,8 +99,7 @@ class InvoiceDetailsScreen extends StatelessWidget {
     List<Map<String, dynamic>> items,
     double total,
   ) async {
-    final fontData =
-        await rootBundle.load('assets/fonts/Amiri-Regular.ttf');
+    final fontData = await rootBundle.load('assets/fonts/Amiri-Regular.ttf');
     final ttf = pw.Font.ttf(fontData);
 
     final pdf = pw.Document();
@@ -102,18 +121,14 @@ class InvoiceDetailsScreen extends StatelessWidget {
                       fontWeight: pw.FontWeight.bold,
                     )),
                 pw.Text('فرخة - سلفيت', style: pw.TextStyle(font: ttf)),
-                pw.Text('الهاتف: 0568499052',
-                    style: pw.TextStyle(font: ttf)),
+                pw.Text('الهاتف: 0568499052', style: pw.TextStyle(font: ttf)),
                 pw.Divider(thickness: 2),
                 pw.SizedBox(height: 16),
                 pw.Text('فاتورة بيع',
                     style: pw.TextStyle(
-                        font: ttf,
-                        fontSize: 24,
-                        fontWeight: pw.FontWeight.bold)),
+                        font: ttf, fontSize: 24, fontWeight: pw.FontWeight.bold)),
                 pw.SizedBox(height: 16),
-                pw.Text('العميل: $customer',
-                    style: pw.TextStyle(font: ttf)),
+                pw.Text('العميل: $customer', style: pw.TextStyle(font: ttf)),
                 pw.Text('التاريخ: $date', style: pw.TextStyle(font: ttf)),
                 if (note.isNotEmpty)
                   pw.Text('ملاحظة: $note', style: pw.TextStyle(font: ttf)),
@@ -124,10 +139,8 @@ class InvoiceDetailsScreen extends StatelessWidget {
                 pw.Table.fromTextArray(
                   headers: ['المنتج', 'الكمية', 'السعر', 'المجموع'],
                   data: items.map((item) {
-                    final qty =
-                        double.tryParse(item['qty'] ?? '0') ?? 0;
-                    final price =
-                        double.tryParse(item['price'] ?? '0') ?? 0;
+                    final qty = double.tryParse(item['qty'] ?? '0') ?? 0;
+                    final price = double.tryParse(item['price'] ?? '0') ?? 0;
                     final subtotal = qty * price;
                     return [
                       item['name'] ?? '',
@@ -153,13 +166,11 @@ class InvoiceDetailsScreen extends StatelessWidget {
                           fontWeight: pw.FontWeight.bold)),
                 ),
                 pw.SizedBox(height: 40),
-                pw.Text('توقيع:',
-                    style: pw.TextStyle(fontSize: 14, font: ttf)),
+                pw.Text('توقيع:', style: pw.TextStyle(fontSize: 14, font: ttf)),
                 pw.SizedBox(height: 40),
                 pw.Text('________________________'),
                 pw.SizedBox(height: 40),
-                pw.Text('المستلم:',
-                    style: pw.TextStyle(fontSize: 14, font: ttf)),
+                pw.Text('المستلم:', style: pw.TextStyle(fontSize: 14, font: ttf)),
                 pw.SizedBox(height: 40),
                 pw.Text('________________________'),
               ],

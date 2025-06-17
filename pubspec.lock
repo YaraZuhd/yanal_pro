@@ -41,6 +41,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.13"
+  blue_thermal_printer:
+    dependency: "direct main"
+    description:
+      path: "packages/blue_thermal_printer"
+      relative: true
+    source: path
+    version: "1.2.3"
   boolean_selector:
     dependency: transitive
     description:

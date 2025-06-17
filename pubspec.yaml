@@ -37,13 +37,15 @@ dependencies:
   shared_preferences: ^2.2.2
   pdf: ^3.10.4
   printing: ^5.12.0
+  blue_thermal_printer:
+    path: packages/blue_thermal_printer
 
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   dropdown_button2: ^2.3.9
-  flutter_launcher_icons: ^0.13.1  
+  flutter_launcher_icons: ^0.13.1
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
