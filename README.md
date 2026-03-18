@@ -1,113 +1,112 @@
-# Yanal Pro — نظام إدارة التجارة والمحاسبة
+# Yanal Pro — Trade & Accounting Management System
 
-تطبيق Flutter لإدارة الفواتير والعملاء والمحاسبة لشركة **العبهري ينال للتجارة والتوزيع - شعبان**.
-
----
-
-## المميزات
-
-### الفواتير
-- إنشاء فواتير بيع مع ترقيم تلقائي (#1، #2، ...)
-- إضافة منتجات متعددة مع الكمية وسعر الوحدة
-- حقل خصم مع حساب المجموع الكلي فوري (live total)
-- تتبع حالة الدفع: **مدفوع / غير مدفوع / دفع جزئي**
-- تحديث حالة الدفع مباشرةً من صفحة تفاصيل الفاتورة
-- ملاحظات اختيارية على كل فاتورة
-- تصدير الفاتورة كـ PDF مع رقم الفاتورة والخصم وحالة الدفع وخانات التوقيع
-- طباعة حرارية عبر البلوتوث
-
-### العملاء
-- إضافة عملاء مع اسم ورقم هاتف
-- بحث في قائمة العملاء
-- حذف بالسحب (swipe-to-delete)
-
-### قائمة الفواتير
-- عرض الفواتير بترتيب الأحدث أولاً
-- فلترة بحالة الدفع (الكل / مدفوع / غير مدفوع / جزئي)
-- بحث باسم العميل
-- شارات ملونة لحالة الدفع
-- حذف بالسحب مع تأكيد
-
-### ملخص الحسابات
-- إجمالي الإيرادات والمبالغ المحصّلة والمستحقة
-- إجمالي المصروفات وصافي الربح
-- إحصائيات الفواتير (عدد المدفوعة/غير المدفوعة)
-- تقرير الإيرادات الشهرية مع أشرطة مرئية
-
-### المصروفات
-- تسجيل المصروفات مع وصف، مبلغ، وتصنيف
-- التصنيفات: شراء بضاعة / نقل وتوصيل / فواتير ومرافق / رواتب / أخرى
-- فلترة حسب التصنيف
-- إجمالي المصروفات الكلية والمصفّاة
-
-### الرئيسية (Dashboard)
-- بطاقات إحصائية فورية: عدد الفواتير، الغير مدفوعة، الإيرادات، العملاء
-- تتحدث تلقائياً عند العودة من أي شاشة
+A Flutter app for managing invoices, customers, expenses, and accounting for **Al-Ebhri Yanal Trading & Distribution**.
 
 ---
 
-## التقنيات المستخدمة
+## Features
 
-| المكون | التقنية |
+### Invoices
+- Create sales invoices with auto-incrementing numbers (#1, #2, ...)
+- Add multiple line items with quantity and unit price
+- Discount field with live total calculation
+- Payment status tracking: **Paid / Unpaid / Partial**
+- Update payment status directly from the invoice details screen
+- Optional notes per invoice
+- Export invoices as PDF (includes invoice number, discount, payment status, signature fields)
+- Bluetooth thermal printer support
+
+### Customers
+- Add customers with name and phone number
+- Search within the customer list
+- Swipe-to-delete
+
+### Invoice List
+- Newest invoices shown first
+- Filter by payment status (All / Paid / Unpaid / Partial)
+- Search by customer name
+- Color-coded payment status badges
+- Swipe-to-delete with confirmation
+
+### Accounting Summary
+- Total revenue, collected amount, and outstanding balance
+- Total expenses and net profit
+- Invoice breakdown by status (paid / partial / unpaid)
+- Monthly revenue report with visual progress bars
+
+### Expenses
+- Log expenses with description, amount, and category
+- Categories: Stock Purchase / Transport / Utilities / Salaries / Other
+- Filter by category with a running filtered total
+
+### Dashboard (Home Screen)
+- Live stat cards: total invoices, unpaid count, revenue, customer count
+- Auto-refreshes when returning from any screen
+
+---
+
+## Tech Stack
+
+| Component | Technology |
 |---|---|
 | Framework | Flutter 3.x / Dart 3.8+ |
-| التخزين | SharedPreferences (محلي) |
-| إنشاء PDF | `pdf` + `printing` |
-| الطباعة الحرارية | `blue_thermal_printer` (stub) |
-| واجهة المستخدم | Material Design 3 — Dark Theme |
-| الخط | Amiri (للعربية في PDF) |
+| Storage | SharedPreferences (local) |
+| PDF Generation | `pdf` + `printing` |
+| Thermal Printing | `blue_thermal_printer` (stub) |
+| UI | Material Design 3 — Dark Theme |
+| Font | Amiri (Arabic font for PDF output) |
 
 ---
 
-## هيكل المشروع
+## Project Structure
 
 ```
 lib/
 ├── main.dart
 └── screens/
-    ├── welcome_screen.dart         # الرئيسية + إحصائيات
-    ├── new_invoice_screen.dart     # إنشاء فاتورة جديدة
-    ├── invoice_list_screen.dart    # قائمة الفواتير مع فلتر
-    ├── invoice_details_screen.dart # تفاصيل + PDF + تحديث الدفع
-    ├── customer_list_screen.dart   # إدارة العملاء
-    ├── accounting_screen.dart      # ملخص الحسابات
-    ├── expense_screen.dart         # تتبع المصروفات
+    ├── welcome_screen.dart          # Dashboard + stats
+    ├── new_invoice_screen.dart      # Create new invoice
+    ├── invoice_list_screen.dart     # Invoice list with filters
+    ├── invoice_details_screen.dart  # Details + PDF + payment update
+    ├── customer_list_screen.dart    # Customer management
+    ├── accounting_screen.dart       # Financial summary
+    ├── expense_screen.dart          # Expense tracking
     ├── thermal_printer_service.dart
     └── thermal_print_screen.dart
 
 packages/
-└── blue_thermal_printer/           # Stub للطابعة الحرارية
+└── blue_thermal_printer/           # Bluetooth printer stub package
 ```
 
 ---
 
-## نموذج البيانات
+## Data Models
 
-**الفاتورة:**
+**Invoice:**
 ```json
 {
   "invoiceNumber": 1,
-  "customer": "اسم العميل",
+  "customer": "Customer Name",
   "timestamp": "2026-03-18T10:00:00.000Z",
   "items": [
-    { "name": "منتج", "qty": "5", "price": "10.00" }
+    { "name": "Product", "qty": "5", "price": "10.00" }
   ],
   "discount": "5",
   "paymentStatus": "paid",
-  "note": "ملاحظة اختيارية"
+  "note": "Optional note"
 }
 ```
 
-**العميل:**
+**Customer:**
 ```json
-{ "name": "اسم العميل", "phone": "059xxxxxxx" }
+{ "name": "Customer Name", "phone": "059xxxxxxx" }
 ```
 
-**المصروف:**
+**Expense:**
 ```json
 {
   "id": "1710000000000",
-  "description": "شراء بضاعة",
+  "description": "Stock purchase",
   "amount": "500",
   "category": "stock",
   "timestamp": "2026-03-18T10:00:00.000Z"
@@ -116,16 +115,16 @@ packages/
 
 ---
 
-## معلومات الشركة
+## Business Info
 
-- **الاسم:** العبهري ينال للتجارة والتوزيع - شعبان
-- **الموقع:** فرخة - سلفيت - فلسطين
-- **الهاتف:** 0568499052
-- **العملة:** شيكل جديد (₪)
+- **Company:** Al-Ebhri Yanal Trading & Distribution — Sha'ban
+- **Location:** Farkhah, Salfit, Palestine
+- **Phone:** 0568499052
+- **Currency:** New Israeli Shekel (₪)
 
 ---
 
-## تشغيل المشروع
+## Getting Started
 
 ```bash
 flutter pub get
